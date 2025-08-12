@@ -1,522 +1,374 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Search, X, Star, ChevronDown, Trash2, Plus, Minus, Filter } from "lucide-react";
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Elegant Scents – Sklep z e‑perfumami</title>
+  <style>
+    :root{
+      --bg:#0b0c10; --card:#111316; --muted:#99a1ab; --text:#e9eef5; --primary:#0ea5e9; --accent:#22c55e; --danger:#ef4444; --border:#1f242b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#0b0c10,#0e1116);color:var(--text)}
+    a,button,input,select{font:inherit}
+    .container{max-width:1200px;margin:0 auto;padding:16px}
+    header{position:sticky;top:0;backdrop-filter:saturate(180%) blur(8px);background:rgba(11,12,16,.7);border-bottom:1px solid var(--border);z-index:50;animation:fadeDown .45s ease}
+    .row{display:flex;gap:12px;align-items:center}
+    .grow{flex:1}
+    .brand{display:flex;gap:10px;align-items:center}
+    .logo{width:36px;height:36px;border-radius:10px;background:#fff;color:#000;display:grid;place-items:center;font-weight:800;animation:pop .35s ease}
+    .search{position:relative}
+    .search input{width:100%;padding:10px 12px 10px 36px;border-radius:999px;background:#0e1217;border:1px solid var(--border);color:var(--text)}
+    .search svg{position:absolute;left:12px;top:50%;translate:0 -50%;opacity:.6}
+    .btn{border:1px solid var(--border);background:#0f1318;color:var(--text);padding:10px 14px;border-radius:999px;cursor:pointer;transition:transform .12s ease, box-shadow .2s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.25)}
+    .btn:active{transform:translateY(0) scale(.98)}
+    .btn.primary{background:var(--primary);border-color:transparent;color:#001018}
+    .btn.ghost{background:transparent}
+    .badge{background:#18212b;border:1px solid var(--border);padding:2px 8px;border-radius:999px;font-size:12px}
+    .grid{display:grid;gap:16px}
+    .grid.products{grid-template-columns:repeat(1,minmax(0,1fr))}
+    @media(min-width:640px){.grid.products{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(min-width:1024px){.grid.products{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:transform .25s ease, box-shadow .25s ease}
+    .card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 12px 30px rgba(0,0,0,.25)}
+    .card .img{aspect-ratio:4/5;background:#0c0f13}
+    .card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 8s ease;will-change:transform}
+    .card:hover img{transform:scale(1.05)}
+    .card .body{padding:14px}
+    .muted{color:var(--muted)}
+    .price{font-weight:700}
+    .line{height:1px;background:var(--border);margin:8px 0}
+    .filters{background:#0e1217;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .filters .control{background:#0f1318;border:1px solid var(--border);color:var(--text);border-radius:12px;padding:8px 10px}
+    .right{margin-left:auto}
+    /* Drawer (cart) */
+    .drawer{position:fixed;inset:0;display:none}
+    .drawer.open{display:block}
+    .drawer .backdrop{position:absolute;inset:0;background:#0008}
+    .drawer .panel{position:absolute;right:0;top:0;bottom:0;width:min(520px,95vw);background:#0e1115;border-left:1px solid var(--border);padding:16px;display:flex;flex-direction:column}
+    .scroll{overflow:auto;max-height:55vh;padding-right:6px}
+    .item{display:flex;gap:10px;align-items:center;border:1px solid var(--border);border-radius:12px;padding:10px}
+    .icon-btn{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--border);background:#0f1318;border-radius:10px;cursor:pointer}
+    .total{border-top:1px solid var(--border);padding-top:12px}
+    /* Dialog */
+    dialog{border:none;background:#0e1115;color:var(--text);border-radius:16px;width:min(720px,95vw)}
+    dialog::backdrop{background:#0008}
+    .pill{border-radius:999px;border:1px solid var(--border);padding:6px 10px;background:#0f1318;display:inline-flex;gap:6px;align-items:center}
+    input[type="range"]{accent-color:var(--primary)}
+    .footer{border-top:1px solid var(--border);color:var(--muted);font-size:13px}
+    .reveal{opacity:0;transform:translateY(8px);transition:opacity .5s ease, transform .5s ease}
+    .reveal.in{opacity:1;transform:none}
+    @keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+    @keyframes fadeDown{0%{opacity:0;transform:translateY(-20px)}100%{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container row" style="padding:10px 16px">
+      <div class="brand">
+        <div class="logo">P</div>
+        <div>
+          <div style="font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.8">Perfumeria</div>
+          <div style="font-weight:700;margin-top:-4px">Elegant Scents</div>
+        </div>
+      </div>
+      <div class="search grow" style="max-width:520px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input id="q" placeholder="Szukaj po nazwie, marce, nutach…"/>
+      </div>
+      <button class="btn" id="cartBtn">
+        <span style="display:inline-flex;gap:8px;align-items:center">
+          🛒 Koszyk <span class="badge" id="cartCount">0</span>
+        </span>
+      </button>
+    </div>
+  </header>
 
-// --- Utils ---
-const formatPLN = (n) => new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" }).format(n);
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  <!-- Hero -->
+  <section class="container" style="padding-block:28px">
+    <div class="row" style="gap:20px;align-items:stretch;flex-wrap:wrap">
+      <div class="card grow" style="min-width:280px">
+        <div class="body">
+          <h1 style="font-size:36px;line-height:1.1;margin:0 0 10px">E‑perfumy najwyższej jakości – wyraź siebie zapachem</h1>
+          <p class="muted" style="font-size:18px">Inspiracje 1:1 klasy premium. Sklep jest czytelny, szybki i elegancki: filtry, wyszukiwarka, szybki podgląd, koszyk z zapisem oraz prosty checkout (demo).</p>
+          <div class="row" style="gap:8px;margin-top:10px">
+            <a class="btn primary" href="#catalog">Przeglądaj ofertę</a>
+            <button class="btn">Program lojalnościowy</button>
+          </div>
+          <ul class="muted" style="font-size:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:10px;padding-left:18px">
+            <li>Darmowa dostawa od 500 zł</li>
+            <li>Bezpieczne płatności (demo)</li>
+            <li>Zwrot 30 dni</li>
+            <li>Ekskluzywne kolekcje</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="flex:1;min-width:280px;overflow:hidden">
+        <div class="img"><img alt="baner" src="https://images.unsplash.com/photo-1523292562811-8fa7962a78c8?q=80&w=1600&auto=format&fit=crop"></div>
+      </div>
+    </div>
+  </section>
 
-// --- Demo catalog ---
-const PRODUCTS = [
-  {
-    id: "sauvage-edt",
-    name: "Dior Sauvage EDT",
-    brand: "Dior",
-    gender: "męskie",
-    family: "aromatyczno-fougere",
-    notes: ["bergamotka", "pieprz", "ambra"],
-    rating: 4.7,
-    price: 449,
-    oldPrice: 499,
-    ml: [60, 100, 200],
-    image: "https://images.unsplash.com/photo-1629196900384-2c0db83b6f39?q=80&w=1200&auto=format&fit=crop",
-    bestseller: true,
-  },
-  {
-    id: "bleu-edp",
-    name: "Bleu de Chanel EDP",
-    brand: "Chanel",
-    gender: "męskie",
-    family: "drzewno-aromatyczne",
-    notes: ["cytrusy", "kadzidło", "drzewo sandałowe"],
-    rating: 4.8,
-    price: 599,
-    ml: [50, 100, 150],
-    image: "https://images.unsplash.com/photo-1629196900991-e1c78c73d972?q=80&w=1200&auto=format&fit=crop",
-    bestseller: true,
-  },
-  {
-    id: "aventus",
-    name: "Creed Aventus",
-    brand: "Creed",
-    gender: "męskie",
-    family: "owocowo-drzewne",
-    notes: ["ananas", "brzoza", "piżmo"],
-    rating: 4.6,
-    price: 1390,
-    ml: [50, 100],
-    image: "https://images.unsplash.com/photo-1603714228681-8d7b9b3db504?q=80&w=1200&auto=format&fit=crop",
-    bestseller: true,
-  },
-  {
-    id: "br540",
-    name: "Baccarat Rouge 540 EDP",
-    brand: "MFK",
-    gender: "unisex",
-    family: "bursztynowo-kwiatowe",
-    notes: ["ambra", "szafran", "cedr"],
-    rating: 4.7,
-    price: 1190,
-    ml: [35, 70],
-    image: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa0?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "black-orchid",
-    name: "Tom Ford Black Orchid",
-    brand: "Tom Ford",
-    gender: "unisex",
-    family: "orientalno-kwiatowe",
-    notes: ["czarna orchidea", "trufla", "paczula"],
-    rating: 4.5,
-    price: 589,
-    ml: [50, 100],
-    image: "https://images.unsplash.com/photo-1621242160078-75e67e1bb9e1?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "good-girl",
-    name: "Carolina Herrera Good Girl",
-    brand: "Carolina Herrera",
-    gender: "damskie",
-    family: "bursztynowo-kwiatowe",
-    notes: ["jaśmin", "kakao", "tonka"],
-    rating: 4.4,
-    price: 439,
-    ml: [50, 80],
-    image: "https://images.unsplash.com/photo-1608571425184-1a90b88f0f20?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "j-adore",
-    name: "Dior J'adore",
-    brand: "Dior",
-    gender: "damskie",
-    family: "kwiatowe",
-    notes: ["ylang-ylang", "jaśmin", "róża"],
-    rating: 4.6,
-    price: 549,
-    ml: [50, 100],
-    image: "https://images.unsplash.com/photo-1556228724-4b9d1a0639f6?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "no5",
-    name: "Chanel No. 5",
-    brand: "Chanel",
-    gender: "damskie",
-    family: "kwiatowo-aldehydowe",
-    notes: ["aldehydy", "ylang-ylang", "piżmo"],
-    rating: 4.7,
-    price: 699,
-    ml: [50, 100],
-    image: "https://images.unsplash.com/photo-1585386959984-a4155223168f?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "acqua-di-gio",
-    name: "Giorgio Armani Acqua di Giò",
-    brand: "Armani",
-    gender: "męskie",
-    family: "cytrusowo-wodne",
-    notes: ["limonka", "jaśmin", "morska bryza"],
-    rating: 4.3,
-    price: 389,
-    ml: [50, 100, 200],
-    image: "https://images.unsplash.com/photo-1563170351-be82bc888aa4?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "la-nuit",
-    name: "YSL La Nuit de L'Homme",
-    brand: "YSL",
-    gender: "męskie",
-    family: "przyprawowe",
-    notes: ["kardamon", "lawenda", "cedr"],
-    rating: 4.4,
-    price: 439,
-    ml: [60, 100],
-    image: "https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1200&auto=format&fit=crop",
-  },
+  <!-- Filters -->
+  <section class="filters">
+    <div class="container row" style="flex-wrap:wrap;gap:10px;padding:12px 16px" id="catalog">
+      <span class="muted" style="display:inline-flex;gap:8px;align-items:center">⚙️ Filtry:</span>
+      <select id="fGender" class="control"><option value="wszyscy">wszyscy</option><option>męskie</option><option>damskie</option><option>unisex</option></select>
+      <select id="fBrand" class="control"></select>
+      <select id="fFamily" class="control"></select>
+      <span class="pill">Maks. cena: <b id="priceLabel" style="margin-left:6px"></b></span>
+      <input id="priceMax" type="range" min="100" max="1500" step="10" value="1500" class="right" style="width:220px">
+      <select id="fSort" class="control right">
+        <option value="popular">Popularność</option>
+        <option value="price-asc">Cena rosnąco</option>
+        <option value="price-desc">Cena malejąco</option>
+        <option value="rating">Ocena</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Products -->
+  <main class="container" style="padding-block:16px">
+    <div id="list" class="grid products reveal"></div>
+  </main>
+
+  <!-- Quick view dialog -->
+  <dialog id="quick">
+    <div class="row" style="gap:18px;flex-wrap:wrap">
+      <div style="flex:1;min-width:260px"><img id="qImg" alt="" style="width:100%;border-radius:14px;border:1px solid var(--border)"></div>
+      <div style="flex:1;min-width:260px">
+        <h3 id="qName" style="margin:0 0 6px"></h3>
+        <div class="muted" id="qMeta" style="margin-bottom:6px"></div>
+        <div class="pill" style="margin-bottom:6px">⭐ <span id="qRating"></span></div>
+        <div class="muted" id="qNotes" style="margin-bottom:10px"></div>
+        <div id="qSizes" class="row" style="flex-wrap:wrap;gap:8px"></div>
+        <p class="muted" style="font-size:12px;margin-top:10px">* Produkt demo. Płatności i wysyłka są zasymulowane.</p>
+        <div class="row" style="justify-content:flex-end;margin-top:10px">
+          <button class="btn ghost" onclick="document.getElementById('quick').close()">Zamknij</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Cart drawer -->
+  <div class="drawer" id="drawer">
+    <div class="backdrop" onclick="toggleCart(false)"></div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:6px 0">Twój koszyk</h3>
+        <button class="icon-btn" onclick="toggleCart(false)">✖</button>
+      </div>
+      <div id="cartEmpty" class="muted" style="margin:10px 0 0">Koszyk jest pusty.</div>
+      <div class="scroll" id="cartList"></div>
+      <div class="total">
+        <div class="row" style="justify-content:space-between"><span class="muted">Produkty</span><b id="subTotal"></b></div>
+        <div class="row" style="justify-content:space-between"><span class="muted">Dostawa (szac.)</span><span id="ship"></span></div>
+        <div class="row" style="justify-content:space-between;font-size:18px"><span><b>Razem</b></span><b id="grand"></b></div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <button class="btn" onclick="clearCart()">Wyczyść</button>
+          <button class="btn primary grow" id="goCheckout" onclick="openCheckout()" disabled>Przejdź do kasy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout dialog -->
+  <dialog id="checkout">
+    <form method="dialog">
+      <h3>Finalizacja zamówienia</h3>
+      <div class="line"></div>
+      <div class="row" style="flex-direction:column;gap:8px">
+        <input class="control" id="cName" placeholder="Imię i nazwisko" required>
+        <input class="control" id="cEmail" placeholder="E-mail" type="email" required>
+        <input class="control" id="cAddr" placeholder="Ulica i numer" required>
+        <div class="row" style="gap:8px">
+          <input class="control grow" id="cCity" placeholder="Miasto">
+          <input class="control" style="width:160px" id="cZip" placeholder="Kod pocztowy">
+        </div>
+        <div class="card" style="padding:10px" id="summary"></div>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="btn ghost" onclick="document.getElementById('checkout').close()">Wróć</button>
+        <button type="submit" class="btn primary" onclick="placeOrder()">Zamawiam i płacę (demo)</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <div class="container" style="padding:24px 16px">
+      © <span id="year"></span> Elegant Scents. Projekt demonstracyjny – jednoplikowy HTML.
+    </div>
+  </footer>
+
+<script>
+// ===== Utils =====
+const PLN = n => n.toLocaleString('pl-PL',{style:'currency',currency:'PLN'});
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const $ = sel => document.querySelector(sel);
+
+// ===== Data =====
+const PRODUCTS=[
+  {id:'sauvage-edt',name:'Dior Sauvage EDT',brand:'Dior',gender:'męskie',family:'aromatyczno-fougere',notes:['bergamotka','pieprz','ambra'],rating:4.7,price:449,oldPrice:499,ml:[60,100,200],image:'https://www.muscatdutyfree.com/media/catalog/product/cache/57b17dddc8233404e4581a0a2e2c0f31/1/0/100857.jpg',bestseller:true},
+  {id:'bleu-edp',name:'Bleu de Chanel EDP',brand:'Chanel',gender:'męskie',family:'drzewno-aromatyczne',notes:['cytrusy','kadzidło','drzewo sandałowe'],rating:4.8,price:599,ml:[50,100,150],image:'https://images.unsplash.com/photo-1629196900991-e1c78c73d972?q=80&w=1200&auto=format&fit=crop',bestseller:true},
+  {id:'aventus',name:'Creed Aventus',brand:'Creed',gender:'męskie',family:'owocowo-drzewne',notes:['ananas','brzoza','piżmo'],rating:4.6,price:1390,ml:[50,100],image:'https://images.unsplash.com/photo-1603714228681-8d7b9b3db504?q=80&w=1200&auto=format&fit=crop',bestseller:true},
+  {id:'br540',name:'Baccarat Rouge 540 EDP',brand:'MFK',gender:'unisex',family:'bursztynowo-kwiatowe',notes:['ambra','szafran','cedr'],rating:4.7,price:1190,ml:[35,70],image:'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa0?q=80&w=1200&auto=format&fit=crop'},
+  {id:'black-orchid',name:'Tom Ford Black Orchid',brand:'Tom Ford',gender:'unisex',family:'orientalno-kwiatowe',notes:['czarna orchidea','trufla','paczula'],rating:4.5,price:589,ml:[50,100],image:'https://images.unsplash.com/photo-1621242160078-75e67e1bb9e1?q=80&w=1200&auto=format&fit=crop'},
+  {id:'good-girl',name:'Carolina Herrera Good Girl',brand:'Carolina Herrera',gender:'damskie',family:'bursztynowo-kwiatowe',notes:['jaśmin','kakao','tonka'],rating:4.4,price:439,ml:[50,80],image:'https://images.unsplash.com/photo-1608571425184-1a90b88f0f20?q=80&w=1200&auto=format&fit=crop'},
+  {id:'j-adore',name:"Dior J'adore",brand:'Dior',gender:'damskie',family:'kwiatowe',notes:['ylang-ylang','jaśmin','róża'],rating:4.6,price:549,ml:[50,100],image:'https://images.unsplash.com/photo-1556228724-4b9d1a0639f6?q=80&w=1200&auto=format&fit=crop'},
+  {id:'no5',name:'Chanel No. 5',brand:'Chanel',gender:'damskie',family:'kwiatowo-aldehydowe',notes:['aldehydy','ylang-ylang','piżmo'],rating:4.7,price:699,ml:[50,100],image:'https://images.unsplash.com/photo-1585386959984-a4155223168f?q=80&w=1200&auto=format&fit=crop'},
+  {id:'acqua-di-gio',name:'Giorgio Armani Acqua di Giò',brand:'Armani',gender:'męskie',family:'cytrusowo-wodne',notes:['limonka','jaśmin','morska bryza'],rating:4.3,price:389,ml:[50,100,200],image:'https://images.unsplash.com/photo-1563170351-be82bc888aa4?q=80&w=1200&auto=format&fit=crop'},
+  {id:'la-nuit',name:"YSL La Nuit de L'Homme",brand:'YSL',gender:'męskie',family:'przyprawowe',notes:['kardamon','lawenda','cedr'],rating:4.4,price:439,ml:[60,100],image:'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1200&auto=format&fit=crop'},
 ];
 
-export default function PerfumeShop() {
-  // --- UI state ---
-  const [query, setQuery] = useState("");
-  const [gender, setGender] = useState("wszyscy");
-  const [brand, setBrand] = useState("wszyscy");
-  const [family, setFamily] = useState("wszystkie");
-  const [sort, setSort] = useState("popular");
-  const [priceMax, setPriceMax] = useState(1500);
-  const [openCart, setOpenCart] = useState(false);
-  const [quickView, setQuickView] = useState(null);
+// ===== State =====
+let state={query:'',gender:'wszyscy',brand:'wszyscy',family:'wszystkie',sort:'popular',priceMax:1500};
+let cart = JSON.parse(localStorage.getItem('perfume_cart_v1')||'[]');
 
-  // --- Cart state ---
-  const [cart, setCart] = useState(() => {
-    try {
-      const raw = localStorage.getItem("perfume_cart_v1");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+// ===== Init filters =====
+const brands=['wszyscy',...Array.from(new Set(PRODUCTS.map(p=>p.brand)))];
+const families=['wszystkie',...Array.from(new Set(PRODUCTS.map(p=>p.family)))];
+$('#fBrand').innerHTML=brands.map(b=>`<option>${b}</option>`).join('');
+$('#fFamily').innerHTML=families.map(f=>`<option>${f}</option>`).join('');
+$('#priceLabel').textContent=PLN(state.priceMax);
+$('#priceMax').addEventListener('input',e=>{state.priceMax=+e.target.value;$('#priceLabel').textContent=PLN(state.priceMax);render()});
+$('#fGender').addEventListener('change',e=>{state.gender=e.target.value;render()});
+$('#fBrand').addEventListener('change',e=>{state.brand=e.target.value;render()});
+$('#fFamily').addEventListener('change',e=>{state.family=e.target.value;render()});
+$('#fSort').addEventListener('change',e=>{state.sort=e.target.value;render()});
+$('#q').addEventListener('input',e=>{state.query=e.target.value.trim().toLowerCase();render()});
 
-  useEffect(() => {
-    localStorage.setItem("perfume_cart_v1", JSON.stringify(cart));
-  }, [cart]);
-
-  const brands = useMemo(() => ["wszyscy", ...Array.from(new Set(PRODUCTS.map(p => p.brand)))], []);
-  const families = useMemo(() => ["wszystkie", ...Array.from(new Set(PRODUCTS.map(p => p.family)))], []);
-
-  const filtered = useMemo(() => {
-    let out = PRODUCTS.filter(p => p.price <= priceMax);
-    if (gender !== "wszyscy") out = out.filter(p => p.gender === gender);
-    if (brand !== "wszyscy") out = out.filter(p => p.brand === brand);
-    if (family !== "wszystkie") out = out.filter(p => p.family === family);
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      out = out.filter(p => `${p.name} ${p.brand} ${p.family} ${p.notes.join(" ")}`.toLowerCase().includes(q));
-    }
-    switch (sort) {
-      case "price-asc": out.sort((a,b)=>a.price-b.price); break;
-      case "price-desc": out.sort((a,b)=>b.price-a.price); break;
-      case "rating": out.sort((a,b)=>b.rating-a.rating); break;
-      default: out.sort((a,b)=> (b.bestseller?1:0) - (a.bestseller?1:0));
-    }
-    return out;
-  }, [query, gender, brand, family, sort, priceMax]);
-
-  const cartCount = cart.reduce((s,i)=>s+i.qty,0);
-  const cartTotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
-
-  const addToCart = (product, sizeMl) => {
-    const key = `${product.id}-${sizeMl}`;
-    setCart(prev => {
-      const existing = prev.find(i => i.key === key);
-      if (existing) {
-        return prev.map(i => i.key===key?{...i, qty: clamp(i.qty+1,1,99)}:i);
-      }
-      toast.success("Dodano do koszyka");
-      return [...prev, { key, id: product.id, name: product.name, sizeMl, price: product.price * (sizeMl / product.ml[0]), qty: 1, image: product.image }];
-    });
-  };
-
-  const updateQty = (key, delta) => {
-    setCart(prev => prev.map(i => i.key===key?{...i, qty: clamp(i.qty+delta, 1, 99)}:i));
-  };
-
-  const removeItem = (key) => setCart(prev => prev.filter(i => i.key!==key));
-  const clearCart = () => setCart([]);
-
-  // --- Checkout ---
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [customer, setCustomer] = useState({ name: "", email: "", address: "", city: "", zip: "" });
-
-  const placeOrder = () => {
-    if (!customer.name || !customer.email || !customer.address) {
-      toast.error("Uzupełnij dane do wysyłki");
-      return;
-    }
-    const orderNo = Math.random().toString(36).slice(2,10).toUpperCase();
-    toast.success(`Zamówienie #${orderNo} złożone! (symulacja)`);
-    setCheckoutOpen(false);
-    setOpenCart(false);
-    clearCart();
-  };
-
-  // --- Component helpers ---
-  function ProductCard({ p }) {
-    const [size, setSize] = useState(p.ml[0]);
-    return (
-      <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="">
-        <Card className="overflow-hidden hover:shadow-xl transition-all rounded-2xl">
-          <div className="aspect-[4/5] w-full relative overflow-hidden">
-            <img src={p.image} alt={p.name} className="object-cover w-full h-full" />
-            {p.bestseller && (
-              <Badge className="absolute top-3 left-3">Bestseller</Badge>
-            )}
-            <button onClick={()=>setQuickView(p)} className="absolute bottom-3 right-3 backdrop-blur px-3 py-1 rounded-full text-xs border hover:scale-105 transition">Szybki podgląd</button>
-          </div>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-semibold leading-tight">{p.name}</h3>
-                <p className="text-sm text-muted-foreground">{p.brand} • {p.gender}</p>
-              </div>
-              <div className="flex items-center gap-1 text-sm" aria-label={`Ocena ${p.rating}`}>
-                <Star className="w-4 h-4 fill-current" /> {p.rating}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select value={String(size)} onValueChange={(v)=>setSize(Number(v))}>
-                <SelectTrigger className="w-[140px]"><SelectValue placeholder="Pojemność" /></SelectTrigger>
-                <SelectContent>
-                  {p.ml.map(m => (
-                    <SelectItem key={m} value={String(m)}>{m} ml</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="ml-auto text-right">
-                <div className="text-lg font-semibold">{formatPLN(p.price * (size / p.ml[0]))}</div>
-                {p.oldPrice && <div className="text-sm line-through text-muted-foreground">{formatPLN(p.oldPrice)}</div>}
-              </div>
-            </div>
-            <Button className="w-full" onClick={()=>addToCart(p, size)}>
-              <ShoppingCart className="w-4 h-4 mr-2"/> Dodaj do koszyka
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
-    );
+// ===== Render products =====
+function filtered(){
+  let out=PRODUCTS.filter(p=>p.price<=state.priceMax);
+  if(state.gender!=='wszyscy') out=out.filter(p=>p.gender===state.gender);
+  if(state.brand!=='wszyscy') out=out.filter(p=>p.brand===state.brand);
+  if(state.family!=='wszystkie') out=out.filter(p=>p.family===state.family);
+  if(state.query) out=out.filter(p=>`${p.name} ${p.brand} ${p.family} ${p.notes.join(' ')}`.toLowerCase().includes(state.query));
+  switch(state.sort){
+    case 'price-asc': out.sort((a,b)=>a.price-b.price); break;
+    case 'price-desc': out.sort((a,b)=>b.price-a.price); break;
+    case 'rating': out.sort((a,b)=>b.rating-a.rating); break;
+    default: out.sort((a,b)=>(b.bestseller?1:0)-(a.bestseller?1:0));
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50">
-      {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/80 border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-2xl bg-black text-white grid place-items-center font-bold">P</div>
-            <div>
-              <div className="text-sm uppercase tracking-widest">Perfumeria</div>
-              <div className="font-semibold -mt-1">Elegant Scents</div>
-            </div>
-          </div>
-
-          {/* Search */}
-          <div className="hidden md:flex items-center gap-2 ml-6 flex-1">
-            <div className="relative w-full max-w-xl">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"/>
-              <Input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Szukaj po nazwie, marce, nutach..." className="pl-9 rounded-full"/>
-            </div>
-          </div>
-
-          {/* Cart */}
-          <Sheet open={openCart} onOpenChange={setOpenCart}>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="rounded-full">
-                <ShoppingCart className="w-4 h-4 mr-2"/> Koszyk <Badge className="ml-2">{cartCount}</Badge>
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[520px] max-w-[95vw]">
-              <SheetHeader>
-                <SheetTitle>Twój koszyk</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6 space-y-4">
-                {cart.length===0 && <div className="text-muted-foreground">Koszyk jest pusty.</div>}
-                <div className="space-y-4 max-h-[55vh] overflow-auto pr-2">
-                  {cart.map(item => (
-                    <div key={item.key} className="flex items-center gap-3 border rounded-xl p-3">
-                      <img src={item.image} alt="miniatura" className="w-16 h-16 object-cover rounded-lg"/>
-                      <div className="flex-1">
-                        <div className="font-medium leading-tight">{item.name}</div>
-                        <div className="text-sm text-muted-foreground">{item.sizeMl} ml</div>
-                        <div className="font-semibold mt-1">{formatPLN(item.price)}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="icon" variant="outline" onClick={()=>updateQty(item.key, -1)}><Minus className="w-4 h-4"/></Button>
-                        <div className="w-8 text-center">{item.qty}</div>
-                        <Button size="icon" variant="outline" onClick={()=>updateQty(item.key, +1)}><Plus className="w-4 h-4"/></Button>
-                      </div>
-                      <Button size="icon" variant="ghost" onClick={()=>removeItem(item.key)}><Trash2 className="w-4 h-4"/></Button>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground"><span>Produkty</span><span>{formatPLN(cartTotal)}</span></div>
-                  <div className="flex justify-between text-sm text-muted-foreground"><span>Dostawa (szac.)</span><span>{cartTotal>500?"0,00 zł":formatPLN(15)}</span></div>
-                  <div className="flex justify-between text-base font-semibold"><span>Razem</span><span>{formatPLN(cartTotal + (cartTotal>500?0:15))}</span></div>
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" className="flex-1" onClick={clearCart}>Wyczyść</Button>
-                    <Button className="flex-1" disabled={!cart.length} onClick={()=>setCheckoutOpen(true)}>Przejdź do kasy</Button>
-                  </div>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
-        <div className="grid md:grid-cols-2 gap-6 items-center">
-          <div className="space-y-4">
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight">Luksusowe perfumy 1:1 oraz oryginały – wyraź siebie zapachem</h1>
-            <p className="text-muted-foreground text-lg">Sklep stworzony z myślą o czytelności i komforcie zakupów. Filtry, wyszukiwarka, szybki podgląd, koszyk i zamówienie – wszystko w jednym miejscu.</p>
-            <div className="flex gap-2">
-              <a href="#catalog"><Button>Przeglądaj nowości</Button></a>
-              <Button variant="outline">Program lojalnościowy</Button>
-            </div>
-            <ul className="text-sm text-muted-foreground grid grid-cols-2 gap-2 pt-2">
-              <li>• Darmowa dostawa od 500 zł</li>
-              <li>• Bezpieczne płatności (symulacja)</li>
-              <li>• Zwrot 30 dni</li>
-              <li>• Dostępne inspiracje 1:1</li>
-            </ul>
-          </div>
-          <div className="rounded-3xl overflow-hidden shadow-xl">
-            <img src="https://images.unsplash.com/photo-1523292562811-8fa7962a78c8?q=80&w=1600&auto=format&fit=crop" alt="baner" className="w-full h-full object-cover"/>
-          </div>
-        </div>
-      </section>
-
-      {/* Filters */}
-      <section className="border-t bg-white/60 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 py-5 flex flex-wrap items-center gap-3" id="catalog">
-          <div className="relative md:hidden w-full">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"/>
-            <Input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Szukaj po nazwie, marce, nutach..." className="pl-9 rounded-full"/>
-          </div>
-
-          <div className="flex items-center gap-2"><Filter className="w-4 h-4"/> Filtry:</div>
-          <Select value={gender} onValueChange={setGender}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Płeć"/></SelectTrigger>
-            <SelectContent>
-              {['wszyscy','męskie','damskie','unisex'].map(v=> <SelectItem key={v} value={v}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={brand} onValueChange={setBrand}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Marka"/></SelectTrigger>
-            <SelectContent>
-              {brands.map(v=> <SelectItem key={v} value={v}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={family} onValueChange={setFamily}>
-            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Rodzina zapachowa"/></SelectTrigger>
-            <SelectContent>
-              {families.map(v=> <SelectItem key={v} value={v}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-3 ml-auto">
-            <label className="text-sm text-muted-foreground">Maks. cena: {formatPLN(priceMax)}</label>
-            <input type="range" min={100} max={1500} step={10} value={priceMax} onChange={(e)=>setPriceMax(Number(e.target.value))} />
-            <Select value={sort} onValueChange={setSort}>
-              <SelectTrigger className="w-[170px]"><SelectValue placeholder="Sortowanie"/></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popular">Popularność</SelectItem>
-                <SelectItem value="price-asc">Cena rosnąco</SelectItem>
-                <SelectItem value="price-desc">Cena malejąco</SelectItem>
-                <SelectItem value="rating">Ocena</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </section>
-
-      {/* Catalog */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <AnimatePresence>
-            {filtered.map(p => (
-              <ProductCard key={p.id} p={p} />
-            ))}
-          </AnimatePresence>
-        </div>
-      </main>
-
-      {/* Quick view dialog */}
-      <Dialog open={!!quickView} onOpenChange={(o)=>!o&&setQuickView(null)}>
-        <DialogContent className="max-w-3xl">
-          {quickView && (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="rounded-2xl overflow-hidden">
-                <img src={quickView.image} alt={quickView.name} className="w-full h-full object-cover"/>
-              </div>
-              <div className="space-y-3">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl">{quickView.name}</DialogTitle>
-                </DialogHeader>
-                <div className="text-sm text-muted-foreground">{quickView.brand} • {quickView.gender} • {quickView.family}</div>
-                <div className="flex items-center gap-1 text-sm"><Star className="w-4 h-4"/> {quickView.rating} / 5</div>
-                <div className="text-sm">Nuty: {quickView.notes.join(", ")}</div>
-                <div className="pt-2 grid grid-cols-[auto,1fr] items-center gap-3">
-                  <span className="text-sm">Pojemność:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {quickView.ml.map(m => (
-                      <Button key={m} variant="outline" size="sm" onClick={()=>addToCart(quickView, m)}> {m} ml – {formatPLN(quickView.price * (m / quickView.ml[0]))}</Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground pt-2">* Produkt demo. Płatności i wysyłka są zasymulowane.</div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={()=>setQuickView(null)}>Zamknij</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Checkout dialog */}
-      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Finalizacja zamówienia</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-3">
-            <Input placeholder="Imię i nazwisko" value={customer.name} onChange={(e)=>setCustomer({...customer, name:e.target.value})}/>
-            <Input placeholder="E-mail" type="email" value={customer.email} onChange={(e)=>setCustomer({...customer, email:e.target.value})}/>
-            <Input placeholder="Ulica i numer" value={customer.address} onChange={(e)=>setCustomer({...customer, address:e.target.value})}/>
-            <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Miasto" value={customer.city} onChange={(e)=>setCustomer({...customer, city:e.target.value})}/>
-              <Input placeholder="Kod pocztowy" value={customer.zip} onChange={(e)=>setCustomer({...customer, zip:e.target.value})}/>
-            </div>
-            <div className="border rounded-xl p-3 space-y-2 bg-slate-50">
-              {cart.map(i => (
-                <div key={i.key} className="flex justify-between text-sm">
-                  <span>{i.name} • {i.sizeMl} ml × {i.qty}</span>
-                  <span>{formatPLN(i.price * i.qty)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between text-sm text-muted-foreground"><span>Dostawa</span><span>{cartTotal>500?"0,00 zł":formatPLN(15)}</span></div>
-              <div className="flex justify-between font-semibold"><span>Do zapłaty</span><span>{formatPLN(cartTotal + (cartTotal>500?0:15))}</span></div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={()=>setCheckoutOpen(false)}>Wróć</Button>
-            <Button onClick={placeOrder} disabled={!cart.length}>Zamawiam i płacę (demo)</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Footer */}
-      <footer className="border-t mt-10">
-        <div className="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-4 gap-8 text-sm">
-          <div>
-            <div className="font-semibold mb-2">Elegant Scents</div>
-            <p className="text-muted-foreground">Perfumeria online – wyselekcjonowane zapachy, szybkie zakupy, pełna przejrzystość.</p>
-          </div>
-          <div>
-            <div className="font-semibold mb-2">Informacje</div>
-            <ul className="space-y-1 text-muted-foreground">
-              <li>Regulamin</li>
-              <li>Polityka prywatności</li>
-              <li>Dostawa i zwroty</li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-semibold mb-2">Pomoc</div>
-            <ul className="space-y-1 text-muted-foreground">
-              <li>Kontakt</li>
-              <li>FAQ</li>
-              <li>Status zamówienia</li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-semibold mb-2">Newsletter</div>
-            <div className="flex gap-2">
-              <Input placeholder="Twój e-mail"/>
-              <Button>Zapisz</Button>
-            </div>
-          </div>
-        </div>
-        <div className="text-xs text-muted-foreground text-center pb-6">© {new Date().getFullYear()} Elegant Scents. Projekt demo.</div>
-      </footer>
-    </div>
-  );
+  return out;
 }
+
+function render(){
+  const list=$('#list');
+  list.innerHTML = filtered().map(p=>{
+    const price=PLN(p.price);
+    return `
+    <div class="card reveal">
+      <div class="img"><img src="${p.image}" alt="${p.name}"></div>
+      <div class="body">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:600">${p.name}</div>
+            <div class="muted" style="font-size:13px">${p.brand} • ${p.gender}</div>
+          </div>
+          <div class="muted" title="Ocena" style="display:flex;gap:6px;align-items:center">⭐ ${p.rating}</div>
+        </div>
+        <div class="row" style="gap:8px;margin-top:8px;align-items:center">
+          <select class="control" id="size-${p.id}">${p.ml.map(m=>`<option value="${m}">${m} ml</option>`).join('')}</select>
+          <div class="right" style="text-align:right">
+            <div class="price">${price}</div>
+            ${p.oldPrice?`<div class="muted" style="text-decoration:line-through;font-size:13px">${PLN(p.oldPrice)}</div>`:''}
+          </div>
+        </div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <button class="btn grow" onclick="addToCart('${p.id}')">🛒 Dodaj do koszyka</button>
+          <button class="btn ghost" onclick="quick('${p.id}')">Podgląd</button>
+        </div>
+      </div>
+    </div>`
+  }).join('');
+  // trigger reveal for newly rendered cards
+  [...document.querySelectorAll('.reveal')].forEach(el=>io.observe(el));
+}
+
+// ===== Quick view =====
+function quick(id){
+  const p=PRODUCTS.find(x=>x.id===id);
+  $('#qImg').src=p.image; $('#qName').textContent=p.name; $('#qMeta').textContent=`${p.brand} • ${p.gender} • ${p.family}`; $('#qRating').textContent=`${p.rating} / 5`; $('#qNotes').textContent=`Nuty: ${p.notes.join(', ')}`;
+  $('#qSizes').innerHTML=p.ml.map(m=>`<button class="btn" onclick="addToCart('${p.id}',${m});document.getElementById('quick').close()">${m} ml – ${PLN(p.price*(m/p.ml[0]))}</button>`).join('');
+  $('#quick').showModal();
+}
+
+// ===== Cart =====
+function addToCart(id,size){
+  const p=PRODUCTS.find(x=>x.id===id);
+  const m=size||+document.getElementById('size-'+id).value||p.ml[0];
+  const key=`${id}-${m}`;
+  const price=p.price*(m/p.ml[0]);
+  const i=cart.find(x=>x.key===key);
+  if(i){ i.qty=clamp(i.qty+1,1,99); }
+  else { cart.push({key,id,name:p.name,sizeMl:m,price,qty:1,image:p.image}); }
+  saveCart();
+  toggleCart(true);
+}
+function updateQty(key,delta){ const i=cart.find(x=>x.key===key); if(!i) return; i.qty=clamp(i.qty+delta,1,99); saveCart(); }
+function removeItem(key){ cart=cart.filter(x=>x.key!==key); saveCart(); }
+function clearCart(){ cart=[]; saveCart(); }
+function saveCart(){ localStorage.setItem('perfume_cart_v1',JSON.stringify(cart)); renderCart(); }
+
+function renderCart(){
+  const count=cart.reduce((s,i)=>s+i.qty,0); document.getElementById('cartCount').textContent=count;
+  const cartList=$('#cartList'); cartList.innerHTML='';
+  if(!cart.length){ $('#cartEmpty').style.display='block'; $('#goCheckout').disabled=true; }
+  else { $('#cartEmpty').style.display='none'; $('#goCheckout').disabled=false; }
+  cart.forEach(item=>{
+    const row=document.createElement('div'); row.className='item';
+    row.innerHTML=`<img src="${item.image}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:10px">`+
+    `<div class="grow"><div style="font-weight:600">${item.name}</div><div class="muted" style="font-size:13px">${item.sizeMl} ml</div><div class="price">${PLN(item.price)}</div></div>`+
+    `<div class="row" style="gap:6px"><button class="icon-btn" onclick="updateQty('${item.key}',-1)">−</button><div style="width:28px;text-align:center">${item.qty}</div><button class="icon-btn" onclick="updateQty('${item.key}',1)">+</button></div>`+
+    `<button class="icon-btn" onclick="removeItem('${item.key}')">🗑️</button>`;
+    cartList.appendChild(row);
+  });
+  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0); const ship=sub>500?0:15; const total=sub+ship;
+  $('#subTotal').textContent=PLN(sub); $('#ship').textContent=ship?PLN(ship):'0,00 zł'; $('#grand').textContent=PLN(total);
+}
+
+function toggleCart(show){ $('#drawer').classList.toggle('open',show); }
+$('#cartBtn').addEventListener('click',()=>toggleCart(true));
+
+// ===== Checkout =====
+function openCheckout(){
+  const sum=$('#summary'); sum.innerHTML=cart.map(i=>`<div class="row" style="justify-content:space-between;font-size:14px"><span>${i.name} • ${i.sizeMl} ml × ${i.qty}</span><b>${PLN(i.price*i.qty)}</b></div>`).join('');
+  const sub=cart.reduce((s,i)=>s+i.price*i.qty,0); const ship=sub>500?0:15; const total=sub+ship;
+  sum.innerHTML+=`<div class="row" style="justify-content:space-between;color:var(--muted)"><span>Dostawa</span><span>${ship?PLN(ship):'0,00 zł'}</span></div>`;
+  sum.innerHTML+=`<div class="row" style="justify-content:space-between;font-size:16px"><b>Do zapłaty</b><b>${PLN(total)}</b></div>`;
+  document.getElementById('checkout').showModal();
+}
+
+function placeOrder(){
+  if(!$('#cName').value||!$('#cEmail').value||!$('#cAddr').value){ alert('Uzupełnij dane do wysyłki'); return; }
+  const orderNo=Math.random().toString(36).slice(2,10).toUpperCase();
+  alert('Zamówienie #'+orderNo+' złożone! (symulacja)');
+  clearCart(); toggleCart(false);
+}
+
+// ===== Click sound (WebAudio) =====
+let audioCtx;
+function clickSound(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(520,audioCtx.currentTime);
+    g.gain.setValueAtTime(0.06,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.12);
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.13);
+  }catch(e){}
+}
+addEventListener('click',e=>{ const el=e.target.closest('button,.btn'); if(el) clickSound(); });
+
+// ===== reveal on scroll =====
+const io=new IntersectionObserver(ents=>{ ents.forEach(en=>{ if(en.isIntersecting) en.target.classList.add('in'); }); },{threshold:.08});
+
+// ===== Boot =====
+render(); renderCart(); document.getElementById('year').textContent=new Date().getFullYear();
+[...document.querySelectorAll('.reveal')].forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
